@@ -16,7 +16,7 @@ This project explores, cleans and prepares official recorded crime data for Irel
 
 ## How to run
 
-1. Install R (4.x) and the packages: `install.packages(c("dplyr", "tidyr", "ggplot2"))`
+1. Install R (4.x) and the packages: `install.packages(c("dplyr", "reshape2", "ggplot2"))`
 2. Open `code/dep_ca1.R` and set the working directory to this folder (the folder with this README).
 3. Run the script from top to bottom. Figures are saved in `figures/` and the clean data in `data/clean/`.
 
