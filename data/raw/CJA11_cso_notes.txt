@@ -1,0 +1,9 @@
+Table: CJA11 - Recorded crime incidents (New Garda Operating Model)
+Updated by CSO: 2026-10-01T11:00:00.000Z
+
+This table represents recorded crime data based on the new Garda Divisional structure under the new Garda Operating Model which was fully implemented by May 2025. The table replaces [url=table/CJQ06]CJA07[/url].
+Data may be subject to revision. Based on data extracted 01 September 2026.
+.. Fraud, Deception & Related offences (09) from Q3 2023 onwards reflects only those incidents reported directly to the Gardaí by members of the public. This is due to the effect of the backlog in processing suspected fraud crime incidents reported to the Gardaí by Financial Institutions under Section 19 of the Criminal Justice Act, 2011. Therefore fraud crime incident figures for pre and post Q3 2023 are not comparable and as a result, full year data for 2023 is not available. For revised figures from 2024 onwards, please see PxStat table [url=table/CJA39]CJA39[/url].
+
+For more information, please go to the [url=https://www.cso.ie/en/statistics/crimeandjustice/recordedcrime/]statistical release page[/url] on our website.
+

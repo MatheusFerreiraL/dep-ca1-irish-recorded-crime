@@ -1,0 +1,10 @@
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+~$*
+.~lock.*
+*.odt
+*.pptx
+*.md.bak
+dataset-choice.md
