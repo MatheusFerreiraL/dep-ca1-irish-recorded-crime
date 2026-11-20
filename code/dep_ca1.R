@@ -3,6 +3,9 @@
 # Data: CSO table CJA11, https://data.cso.ie/table/CJA11
 # Working directory: the project folder (with README.md, code/, data/)
 
+# Packages (full Harvard references in README.md):
+# dplyr 1.2.1 (Wickham et al., 2026a), reshape2 1.4.5 (Wickham, 2025),
+# ggplot2 4.0.3 (Wickham et al., 2026b), fastDummies 1.7.6 (Kaplan, 2026)
 # install.packages(c("dplyr", "reshape2", "ggplot2", "fastDummies"))
 library(dplyr)
 library(reshape2)
