@@ -41,4 +41,4 @@ figures/       plots used in the poster
 
 ## Links
 
-- Video presentation: xxxx
+- Video presentation: https://drive.google.com/file/d/1N_5uXmZcq8Vfh46dH5DdtaYeNseXSgBE/view?usp=drive_link
