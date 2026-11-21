@@ -19,6 +19,7 @@ library(fastDummies)
 crime_raw <- read.csv("data/raw/CJA11_recorded_crime_by_garda_station.csv",
                       fileEncoding = "UTF-8-BOM", stringsAsFactors = FALSE)
 
+# size, column types and a first summary of every column
 dim(crime_raw)
 str(crime_raw)
 summary(crime_raw)
@@ -28,9 +29,11 @@ table(crime_raw$STATISTIC)
 table(crime_raw$Statistic.Label)
 table(crime_raw$UNIT)
 
+# no duplicate rows, and the only NAs are in VALUE (1,692)
 sum(duplicated(crime_raw))
 colSums(is.na(crime_raw))
 
+# which years and offence types the NAs come from
 crime_na <- crime_raw[is.na(crime_raw$VALUE), ]
 table(crime_na$Year)
 table(crime_na$Type.of.Offence)
@@ -38,6 +41,8 @@ table(crime_na$Type.of.Offence)
 
 # ---- 2. Select and rename columns ----
 
+# keep 5 of the 10 columns and give them short names; the others are
+# constant or only codes for the year and the offence
 crime <- crime_raw %>%
   select(Year, station_code = C03037V05454, station_label = Garda.Station,
          offence = Type.of.Offence, incidents = VALUE)
@@ -55,6 +60,8 @@ crime$station_label <- gsub("Co Mayo/Roscommon/Longford \\(",
                             "Co Mayo, Mayo/Roscommon/Longford Division (",
                             crime$station_label)
 
+# division = the text between ", " and " Division ("
+# station = everything before ", <division> Division ("
 crime$division <- sub(".*, (.*) Division \\(.*", "\\1", crime$station_label)
 crime$station <- sub(", [^,]* Division \\(.*", "", crime$station_label)
 
@@ -84,6 +91,7 @@ offence_names <- c(
 # group 15 is called court_orders because about 98% of it is
 # "breach of court orders" (CSO table CJQ06)
 crime$offence <- offence_names[crime$offence]
+# no NA here means every offence name was matched
 table(crime$offence, useNA = "ifany")
 
 
@@ -120,6 +128,7 @@ offence_cols <- c("assault", "dangerous_acts", "kidnapping", "robbery",
 # total without fraud, so all years can be compared
 crime_wide$total_crime <- rowSums(crime_wide[, offence_cols])
 
+# stations with almost no crime, to look for closed or merged stations
 crime_wide %>% filter(total_crime < 5) %>% arrange(total_crime)
 
 # Laytown drops to 61 in 2024 and 0 in 2025 because its policing moved
@@ -132,6 +141,7 @@ crime_wide <- crime_wide %>%
 
 # ---- 8. New features ----
 
+# 1 = station in one of the six Dublin (D.M.R.) divisions
 dublin_divisions <- c("D.M.R. Eastern", "D.M.R. North", "D.M.R. North Central",
                       "D.M.R. South", "D.M.R. South Central", "D.M.R. Western")
 crime_wide$dublin <- ifelse(crime_wide$division %in% dublin_divisions, 1, 0)
@@ -157,6 +167,7 @@ crime_wide <- crime_wide %>%
   ungroup() %>%
   select(-q1, -q3)
 
+# how many outliers, how many are in Dublin, and the stations most often flagged
 table(crime_wide$outlier)
 table(crime_wide$outlier, crime_wide$dublin)
 
@@ -173,6 +184,7 @@ summary(crime_wide$total_crime)
 
 # ---- 10. Save the clean data ----
 
+# 12,970 rows and 23 columns after cleaning (the brief asks for 3000 x 7)
 dim(crime_wide)
 write.csv(crime_wide, "data/clean/crime_station_year_clean.csv",
           row.names = FALSE)
@@ -184,6 +196,7 @@ write.csv(crime_wide, "data/clean/crime_station_year_clean.csv",
 # Q3 Which types of crime go together?
 # Q4 What happened in 2020 (COVID-19)?
 
+# colours checked to be readable for colour-blind readers
 col_blue <- "#2a78d6"
 col_orange <- "#eb6834"
 col_red <- "#e34948"
@@ -199,6 +212,8 @@ crime_long <- melt(as.data.frame(crime_wide[, c("Year", "area", offence_cols)]),
 
 # ---- 11. Distribution of total crime ----
 
+# total crime is very right-skewed, so the same histogram is also
+# drawn on a log scale
 fig_hist <- ggplot(crime_wide, aes(x = total_crime)) +
   geom_histogram(bins = 60, fill = col_blue, colour = "white") +
   labs(title = "Total recorded crime per station and year",
@@ -221,17 +236,20 @@ fig_hist_log
 ggsave("figures/fig-02-histogram-total-crime-log.png", fig_hist_log,
        width = 8, height = 5, dpi = 300)
 
+# the mean is much higher than the median, another sign of the skew
 mean(crime_wide$total_crime)
 median(crime_wide$total_crime)
 
 
 # ---- 12. Q1 Trend over time ----
 
+# national total per year
 crime_year <- crime_wide %>%
   group_by(Year) %>%
   summarise(total_crime = sum(total_crime))
 
 crime_year
+# the peak year
 crime_year[which.max(crime_year$total_crime), ]
 
 fig_trend <- ggplot(crime_year, aes(x = Year, y = total_crime / 1000)) +
@@ -246,6 +264,7 @@ fig_trend
 ggsave("figures/fig-03-national-trend.png", fig_trend,
        width = 8, height = 5, dpi = 300)
 
+# national total per offence type and year
 offence_year <- crime_long %>%
   group_by(Year, offence) %>%
   summarise(incidents = sum(incidents))
@@ -272,6 +291,8 @@ offence_change %>% arrange(change_pct)
 
 # ---- 13. Q2 Dublin vs rest of Ireland ----
 
+# share of each offence type inside Dublin and inside the rest of Ireland
+# in 2025, so two areas of different size can be compared
 profile <- crime_long %>%
   filter(Year == 2025) %>%
   group_by(area, offence) %>%
@@ -311,6 +332,7 @@ fig_violent
 ggsave("figures/fig-06-violent-share-boxplot.png", fig_violent,
        width = 7, height = 5, dpi = 300)
 
+# median violent share and median total per station in each area
 crime_wide %>%
   filter(Year == 2025, total_crime >= 50) %>%
   group_by(area) %>%
@@ -320,6 +342,8 @@ crime_wide %>%
 
 # ---- 14. Unusual patterns by division ----
 
+# one boxplot per division, ordered by the median, to see which divisions
+# and stations stand out
 fig_division <- ggplot(crime_wide %>% filter(Year == 2025),
                        aes(x = total_crime,
                            y = reorder(division, total_crime, FUN = median),
@@ -337,6 +361,7 @@ fig_division
 ggsave("figures/fig-07-division-boxplot.png", fig_division,
        width = 8, height = 7, dpi = 300)
 
+# the 10 busiest stations in 2025
 crime_wide %>%
   filter(Year == 2025) %>%
   arrange(desc(total_crime)) %>%
@@ -353,6 +378,8 @@ round(cor_matrix, 2)
 
 cor_long <- melt(cor_matrix, varnames = c("offence_1", "offence_2"),
                  value.name = "correlation")
+# each pair is in the matrix twice (and each offence with itself), so
+# only one copy is kept to list the 5 weakest pairs
 cor_long %>%
   filter(as.character(offence_1) < as.character(offence_2)) %>%
   arrange(correlation) %>%
@@ -373,6 +400,7 @@ fig_cor
 ggsave("figures/fig-08-correlation-heatmap.png", fig_cor,
        width = 9, height = 8, dpi = 300)
 
+# one pair in detail, station by station
 fig_scatter <- ggplot(crime_2025, aes(x = burglary + 1, y = theft + 1,
                                       colour = area)) +
   geom_point(size = 2, alpha = 0.7) +
@@ -392,6 +420,7 @@ ggsave("figures/fig-09-scatter-theft-burglary.png", fig_scatter,
 
 # ---- 16. Q4 COVID-19 (2019 -> 2020) ----
 
+# % change of each offence type from 2019 to 2020
 covid <- dcast(offence_year %>% filter(Year %in% c(2019, 2020)),
                offence ~ Year, value.var = "incidents")
 names(covid) <- c("offence", "y2019", "y2020")
@@ -418,6 +447,7 @@ ggsave("figures/fig-10-covid-change.png", fig_covid,
 
 # ---- 17. Encoding the division ----
 
+# 21 divisions, stored as a factor
 crime_wide$division <- factor(crime_wide$division)
 nlevels(crime_wide$division)
 
@@ -436,6 +466,7 @@ head(division_onehot[, 1:4])
 # every row should have exactly one 1
 table(rowSums(division_onehot))
 
+# encoded data set: offence counts, dublin flag and 21 dummies (36 columns)
 crime_encoded <- cbind(crime_wide[, c("Year", offence_cols, "dublin")],
                        division_onehot)
 dim(crime_encoded)
@@ -451,6 +482,7 @@ pca_data <- crime_wide[, offence_cols]
 pca_log <- log(pca_data + 1)
 pca_scaled <- scale(pca_log)
 
+# check: every column now has mean 0 and sd 1
 round(colMeans(pca_scaled), 3)
 round(apply(pca_scaled, 2, sd), 3)
 
@@ -466,6 +498,7 @@ pca$x[, 1] <- -pca$x[, 1]
 
 # ---- 19. How many components to keep ----
 
+# eigenvalue = variance of each component (sdev squared)
 eigenvalues <- pca$sdev^2
 variance_pct <- 100 * eigenvalues / sum(eigenvalues)
 
@@ -475,7 +508,8 @@ pca_variance <- data.frame(component = 1:length(eigenvalues),
                            cumulative_pct = round(cumsum(variance_pct), 1))
 pca_variance
 
-# Kaiser rule (eigenvalue > 1) and 80% of the variance
+# Kaiser rule (eigenvalue > 1) keeps 1 component,
+# 80% of the variance keeps 2
 sum(eigenvalues > 1)
 which(cumsum(variance_pct) >= 80)[1]
 
@@ -496,6 +530,7 @@ ggsave("figures/fig-11-pca-scree.png", fig_scree,
 
 # ---- 20. Loadings and scores ----
 
+# loadings = weight of each offence type in PC1-PC3
 loadings <- pca$rotation[, 1:3]
 round(loadings, 2)
 
@@ -517,13 +552,15 @@ fig_loadings
 ggsave("figures/fig-12-pca-loadings.png", fig_loadings,
        width = 10, height = 6, dpi = 300)
 
+# scores = position of each station-year on PC1-PC3
 pca_scores <- data.frame(crime_wide[, c("Year", "station", "division",
                                         "area", "total_crime")],
                          pca$x[, 1:3])
 
-# PC1 is basically the size of the station
+# PC1 is basically the size of the station (r = 0.97)
 cor(pca_scores$PC1, log(pca_scores$total_crime + 1))
 
+# average scores for Dublin and the rest of Ireland
 pca_scores %>%
   group_by(area) %>%
   summarise(PC1 = mean(PC1), PC2 = mean(PC2), PC3 = mean(PC3))
@@ -550,6 +587,7 @@ ggsave("figures/fig-13-pca-scores.png", fig_scores,
 # ---- 21. PCA on the crime mix ----
 
 # share (%) of each offence type, to remove the effect of station size
+# stations under 50 incidents are left out, as in section 13
 mix_data <- crime_wide %>% filter(total_crime >= 50)
 nrow(mix_data)
 
@@ -562,6 +600,8 @@ summary(pca_mix)
 eigen_mix <- pca_mix$sdev^2
 round(eigen_mix, 2)
 variance_mix <- 100 * eigen_mix / sum(eigen_mix)
+# 5 components have eigenvalue > 1 and 9 are needed for 80%, so the
+# crime mix is much less correlated than the counts
 sum(eigen_mix > 1)
 which(cumsum(variance_mix) >= 80)[1]
 
@@ -624,7 +664,8 @@ ggsave("figures/fig-15-mix-pca-scores.png", fig_mix_scores,
 
 # ---- 22. PCA with the division dummies (comparison) ----
 
-# with 21 extra 0/1 columns the variance spreads out a lot more
+# with 21 extra 0/1 columns (34 in total) the variance spreads out a lot
+# more: PC1 falls to 29.8% and 17 components are needed for 80%
 pca_with_dummies <- prcomp(cbind(pca_log, division_onehot),
                            center = TRUE, scale. = TRUE)
 variance_dummies <- 100 * pca_with_dummies$sdev^2 / sum(pca_with_dummies$sdev^2)
@@ -643,8 +684,12 @@ high_pairs <- cor_all_long %>%
   filter(as.character(var_1) < as.character(var_2), abs(r) > 0.9)
 high_pairs
 
+# keep all columns except the first one of each pair. Only damage is
+# dropped (r = 0.91 with theft), so 12 of 13 stay. Unlike PCA, the kept
+# columns are still the real offence counts
 selected <- setdiff(offence_cols, as.character(high_pairs$var_1))
 selected
 length(selected)
 
+# save the PCA scores (PC1-PC3) for each station-year
 write.csv(pca_scores, "data/clean/pca_scores.csv", row.names = FALSE)
