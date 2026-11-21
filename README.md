@@ -13,6 +13,7 @@ This project explores, cleans and prepares official recorded crime data for Irel
 - Source: https://data.cso.ie/table/CJA11
 - Raw file: `data/raw/CJA11_recorded_crime_by_garda_station.csv` (downloaded 17/11/2026)
 - CSO table notes: `data/raw/CJA11_cso_notes.txt`
+- The raw file (about 30 MB) is not uploaded to Moodle because of the upload size limit. It is in the GitHub repository (`data/raw/`) and can also be downloaded from the CSO link above. The clean file `data/clean/crime_station_year_clean.csv` is uploaded to Moodle.
 
 ## How to run
 
@@ -41,4 +42,5 @@ figures/       plots used in the poster
 
 ## Links
 
+- GitHub repository: https://github.com/MatheusFerreiraL/dep-ca1-irish-recorded-crime
 - Video presentation: https://drive.google.com/file/d/1N_5uXmZcq8Vfh46dH5DdtaYeNseXSgBE/view?usp=drive_link
